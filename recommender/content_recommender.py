@@ -1,13 +1,18 @@
 import pandas as pd
 import numpy as np
 import pickle
+import os
 
-spotify = pd.read_csv("data/spotify_tracks_clean.csv")
+BASE_DIR = os.path.dirname(os.path.abspath(__file__)) 
+DATA_DIR = os.path.join(BASE_DIR, "../data")
+MODEL_DIR = os.path.join(BASE_DIR, "../models/content_model")
 
-with open("models/content_model/vectorizer.pkl", "rb") as f:
+spotify = pd.read_csv(os.path.join(DATA_DIR, "spotify_tracks_clean.csv"))
+
+with open(os.path.join(MODEL_DIR, "vectorizer.pkl"), "rb") as f:
     vectorizer = pickle.load(f)
 
-with open("models/content_model/similarity_matrix.pkl", "rb") as f:
+with open(os.path.join(MODEL_DIR, "similarity_matrix.pkl"), "rb") as f:
     top_k_indices, top_k_values = pickle.load(f)
 
 def recommend_content(track_name, top_n=10):
