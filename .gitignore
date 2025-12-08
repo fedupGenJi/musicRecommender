@@ -9,3 +9,5 @@ data/lastfm_clean.csv
 models/content_model/*.pkl
 models/user_model/*.pkl
 models/user_model/*.pth
+
+data/lists/
