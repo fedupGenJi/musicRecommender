@@ -5,3 +5,5 @@ data/test/
 
 data/spotify_clean.csv
 data/lastfm_clean.csv
+
+models/content_model/*.pkl
