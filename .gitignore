@@ -2,3 +2,6 @@ notebook/train_experiments.ipynb
 notebook/test.ipynb
 data/test/
 # these were just there to perform a test on the recommendation system based on a smaller set of data
+
+data/spotify_clean.csv
+data/lastfm_clean.csv
