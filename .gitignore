@@ -11,3 +11,4 @@ models/user_model/*.pkl
 models/user_model/*.pth
 
 data/lists/
+recommender/__pycache__/

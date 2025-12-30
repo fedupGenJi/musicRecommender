@@ -12,7 +12,7 @@ with open(os.path.join(MODEL_DIR, "user_mapping.pkl"), "rb") as f:
 
 n_users = len(user_mapping)
 
-lastfm = pd.read_csv(os.path.join(DATA_DIR, "lastfm_history_clean.csv"))
+lastfm = pd.read_csv(os.path.join(DATA_DIR, "lastfm_clean.csv"))
 track_mapping = dict(enumerate(lastfm["Track"].astype("category").cat.categories))
 n_tracks = len(track_mapping)
 

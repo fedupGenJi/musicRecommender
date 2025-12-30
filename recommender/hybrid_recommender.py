@@ -1,79 +1,47 @@
-import os
-import pickle
-import torch
-import numpy as np
-import pandas as pd
+from content_recommender import recommend_content
+from user_recommender import recommend_for_user
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_DIR = os.path.join(BASE_DIR, "../data")
-CONTENT_MODEL_DIR = os.path.join(BASE_DIR, "../models/content_model")
-USER_MODEL_DIR = os.path.join(BASE_DIR, "../models/user_model")
+def recommend_hybrid(track_name, username, top_n=10):
+    content_recs = recommend_content(track_name, top_n=50)
+    user_recs = recommend_for_user(username, top_n=50)
 
-spotify = pd.read_csv(os.path.join(DATA_DIR, "spotify_tracks_clean.csv"))
-lastfm = pd.read_csv(os.path.join(DATA_DIR, "lastfm_clean.csv"))
+    content_tracks = {
+        r["track_name"].lower(): r for r in content_recs
+    }
 
-with open(os.path.join(CONTENT_MODEL_DIR, "vectorizer.pkl"), "rb") as f:
-    vectorizer = pickle.load(f)
+    user_tracks = {
+        r["track"].lower(): r for r in user_recs
+    }
 
-with open(os.path.join(CONTENT_MODEL_DIR, "similarity_matrix.pkl"), "rb") as f:
-    top_k_indices, top_k_values = pickle.load(f)
+    common = set(content_tracks.keys()) & set(user_tracks.keys())
 
-class CFModel(torch.nn.Module):
-    def __init__(self, n_users, n_items, emb_dim=32):
-        super().__init__()
-        self.user_emb = torch.nn.Embedding(n_users, emb_dim)
-        self.item_emb = torch.nn.Embedding(n_items, emb_dim)
-
-    def forward(self, user, item):
-        return (self.user_emb(user) * self.item_emb(item)).sum(1)
-
-with open(os.path.join(USER_MODEL_DIR, "user_mapping.pkl"), "rb") as f:
-    user_mapping = pickle.load(f)
-
-n_users = len(user_mapping)
-n_tracks = len(spotify)
-
-model = CFModel(n_users, n_tracks)
-model.load_state_dict(torch.load(os.path.join(USER_MODEL_DIR, "model.pth")))
-model.eval()
-
-def recommend_hybrid(track_name, username, top_n=10, w_content=0.7):
-    if track_name not in spotify["track_name"].values:
-        print("Track not found.")
-        return []
-
-    if username not in user_mapping.values():
-        print("User not found.")
-        return []
-
-    track_idx = spotify.index[spotify["track_name"] == track_name][0]
-    content_indices = top_k_indices[track_idx]
-    content_scores = top_k_values[track_idx]
-
-    user_idx = list(user_mapping.keys())[list(user_mapping.values()).index(username)]
-    user_tensor = torch.tensor([user_idx])
-    cf_scores = []
-    for item_id in content_indices:
-        item_tensor = torch.tensor([item_id])
-        score = model(user_tensor, item_tensor).item()
-        cf_scores.append(score)
-    cf_scores = np.array(cf_scores)
-
-    hybrid_scores = w_content * content_scores + (1 - w_content) * cf_scores
-
-    top_indices_sorted = np.argsort(hybrid_scores)[::-1][:top_n]
     results = []
-    for i in top_indices_sorted:
-        idx = content_indices[i]
+
+    for track in common:
         results.append({
-            "track_name": spotify.loc[idx, "track_name"],
-            "artist": spotify.loc[idx, "artists"],
-            "score": float(hybrid_scores[i])
+            "track_name": content_tracks[track]["track_name"],
+            "artist": content_tracks[track].get("artist", ""),
+            "content_score": content_tracks[track].get("similarity", 0),
+            "user_score": user_tracks[track].get("score", 0),
+            "hybrid_score": (
+                0.6 * content_tracks[track].get("similarity", 0)
+                + 0.4 * user_tracks[track].get("score", 0)
+            )
         })
 
-    return results
+    if not results:
+        results = [
+            {
+                "track_name": r["track_name"],
+                "artist": r.get("artist", ""),
+                "hybrid_score": r.get("similarity", 0)
+            }
+            for r in content_recs[:top_n]
+        ]
 
-if __name__ == "__main__":
-    recommendations = recommend_hybrid("Yellow", "isaac", top_n=10)
-    for r in recommendations:
+    return sorted(results, key=lambda x: x["hybrid_score"], reverse=True)[:top_n]
+
+if __name__ == "__main__": 
+    recommendations = recommend_hybrid("Yellow", "isaac", top_n=10) 
+    for r in recommendations: 
         print(r)

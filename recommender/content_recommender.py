@@ -7,7 +7,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, "../data")
 MODEL_DIR = os.path.join(BASE_DIR, "../models/content_model")
 
-spotify = pd.read_csv(os.path.join(DATA_DIR, "spotify_tracks_clean.csv"))
+spotify = pd.read_csv(os.path.join(DATA_DIR, "spotify_clean.csv"))
 
 with open(os.path.join(MODEL_DIR, "vectorizer.pkl"), "rb") as f:
     vectorizer = pickle.load(f)
